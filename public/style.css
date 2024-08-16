@@ -1,0 +1,22 @@
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #0882bb;
+}
+
+#input {
+  width: 100%;
+  color: #e0e0e0;
+  font-size: 10em;
+  text-align: center;
+  border: none;
+  outline: none;
+  background-color: transparent;
+  resize: none;
+  overflow: hidden;
+}
