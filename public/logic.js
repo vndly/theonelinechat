@@ -1,4 +1,4 @@
-import { listenChat, updateChat, setRoom } from './firebase.js'
+import { listenChat, updateChat, setRoom, getTakenFonts, registerUser } from './firebase.js'
 
 // --- Identity ---
 
@@ -185,9 +185,19 @@ function showNotification(message) {
 
 // --- Room mode ---
 
-function initRoom(roomId) {
+async function initRoom(roomId) {
   setRoom(roomId)
   hintElement.classList.add('hidden')
+
+  const takenFonts = await getTakenFonts(roomId, uid)
+  if (takenFonts.includes(font)) {
+    const available = FONTS.filter(f => !takenFonts.includes(f))
+    font = available.length > 0
+      ? available[Math.floor(Math.random() * available.length)]
+      : font // all fonts taken (>5 users), keep current as fallback
+    localStorage.setItem('font', font)
+  }
+  registerUser(roomId, uid, font, color)
 
   let firstUpdate = true
 
