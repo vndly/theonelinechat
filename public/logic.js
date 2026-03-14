@@ -200,15 +200,30 @@ async function initRoom(roomId) {
   registerUser(roomId, uid, font, color)
 
   let firstUpdate = true
+  let floorHolder = null
 
-  inputElement.addEventListener('keypress', function (event) {
-    if (event.key === 'Enter') {
-      event.preventDefault()
-      updateChat({ text: '', color, font })
+  // Global Enter listener — works without clicking the input
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Enter') return
+    event.preventDefault()
+    if (floorHolder === uid) {
+      // Clear text but keep the floor
+      updateChat({ text: '', color, font, activeUser: uid })
     } else {
-      inputElement.addEventListener('keyup', function (event) {
-        updateChat({ text: inputElement.value, color, font })
-      })
+      // Claim the floor
+      floorHolder = uid
+      enableInput()
+      inputElement.focus()
+      updateChat({ text: '', color, font, activeUser: uid })
+    }
+  })
+
+  // Live text updates while typing; also claims floor on first keystroke if unclaimed
+  inputElement.addEventListener('keyup', function (event) {
+    if (event.key === 'Enter') return
+    if (!floorHolder) floorHolder = uid
+    if (floorHolder === uid) {
+      updateChat({ text: inputElement.value, color, font, activeUser: uid })
     }
   })
 
@@ -223,15 +238,36 @@ async function initRoom(roomId) {
     updateHeight(target)
   })
 
-  function updateInput({ text, color: textColor, font: textFont }) {
+  function enableInput() {
+    inputElement.style.pointerEvents = ''
+    inputElement.removeAttribute('tabindex')
+  }
+
+  function disableInput() {
+    inputElement.style.pointerEvents = 'none'
+    inputElement.setAttribute('tabindex', '-1')
+    inputElement.blur()
+  }
+
+  function updateInput({ text, color: textColor, font: textFont, activeUser }) {
     inputElement.value = text
     inputElement.style.color = textColor || color
     inputElement.style.fontFamily = textFont || font
     updateHeight(inputElement)
 
+    floorHolder = activeUser
+    const iAmHolder = floorHolder === uid
+    const floorTaken = floorHolder !== null
+
+    if (floorTaken && !iAmHolder) {
+      disableInput()
+    } else {
+      enableInput()
+    }
+
     if (firstUpdate) {
       firstUpdate = false
-      if (!text) inputElement.focus()
+      if (!text && !floorTaken) inputElement.focus()
     }
   }
 }
