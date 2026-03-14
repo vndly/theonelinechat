@@ -27,10 +27,11 @@ export function setRoom(roomId) {
 
 export function listenChat(callback) {
   onValue(nodeRef, (snapshot) => {
-    callback(snapshot.val()?.text ?? '')
+    const data = snapshot.val() || {}
+    callback({ text: data.text ?? '', color: data.color, font: data.font })
   })
 }
 
-export function updateChat(text) {
-  update(nodeRef, { text })
+export function updateChat({ text, color, font }) {
+  update(nodeRef, { text, color, font })
 }
