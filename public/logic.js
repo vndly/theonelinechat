@@ -162,6 +162,7 @@ function initHomepage() {
 }
 
 async function createRoom() {
+  inputElement.blur()
   overlayElement.classList.add('visible')
   const id = generateRoomId()
   let copied = false
