@@ -40,6 +40,41 @@ body {
   overflow: hidden;
 }
 
+#overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 1em;
+}
+
+#overlay.visible {
+  display: flex;
+}
+
+#overlay-spinner {
+  width: 2em;
+  height: 2em;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+#overlay-label {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1em;
+  letter-spacing: 0.05em;
+}
+
 #notification {
   position: fixed;
   bottom: 2em;

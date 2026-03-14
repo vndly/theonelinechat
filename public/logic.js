@@ -136,6 +136,7 @@ const roomId = window.location.pathname.slice(1)
 const inputElement = document.getElementById('input')
 const hintElement = document.getElementById('hint')
 const notificationElement = document.getElementById('notification')
+const overlayElement = document.getElementById('overlay')
 
 if (roomId) {
   initRoom(roomId)
@@ -161,6 +162,7 @@ function initHomepage() {
 }
 
 async function createRoom() {
+  overlayElement.classList.add('visible')
   const id = generateRoomId()
   let copied = false
   try {
