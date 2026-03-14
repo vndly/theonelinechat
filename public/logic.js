@@ -148,6 +148,17 @@ if (roomId) {
 
 function initHomepage() {
   inputElement.focus()
+
+  // When navigating back, the browser may restore the page from bfcache
+  // with the overlay still visible — reset to the initial state in that case
+  window.addEventListener('pageshow', function (event) {
+    if (event.persisted) {
+      overlayElement.classList.remove('visible')
+      inputElement.value = ''
+      inputElement.focus()
+    }
+  })
+
   inputElement.addEventListener('keypress', function (event) {
     if (event.key === 'Enter') {
       event.preventDefault()
