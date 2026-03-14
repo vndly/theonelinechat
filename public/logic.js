@@ -76,17 +76,21 @@ function initHomepage() {
 
 async function createRoom() {
   const id = generateRoomId()
+  let copied = false
   try {
     await navigator.clipboard.writeText(id)
+    copied = true
   } catch (e) {
-    // clipboard unavailable (e.g. non-secure context), carry on
+    // clipboard unavailable (e.g. non-secure context)
   }
-  showNotification(`${id} · copied to clipboard`)
+  showNotification(copied ? `${id} · copied to clipboard` : id)
   setTimeout(() => { window.location.href = '/' + id }, 1500)
 }
 
 function showNotification(message) {
   notificationElement.textContent = message
+  // Force a reflow so the browser registers opacity: 0 before transitioning to 1
+  notificationElement.getBoundingClientRect()
   notificationElement.classList.add('visible')
 }
 
