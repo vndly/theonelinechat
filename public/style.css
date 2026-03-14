@@ -9,6 +9,25 @@ body {
   background-color: #0882bb;
 }
 
+#container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+#hint {
+  margin: 0 0 0.5em;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1em;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+#hint.hidden {
+  display: none;
+}
+
 #input {
   width: 100%;
   color: #e0e0e0;
@@ -19,4 +38,21 @@ body {
   background-color: transparent;
   resize: none;
   overflow: hidden;
+}
+
+#notification {
+  position: fixed;
+  bottom: 2em;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9em;
+  letter-spacing: 0.05em;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+#notification.visible {
+  opacity: 1;
 }

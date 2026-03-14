@@ -19,14 +19,18 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig)
 const database = getDatabase(app)
-const nodeRef = ref(database, 'test')
+let nodeRef = null
+
+export function setRoom(roomId) {
+  nodeRef = ref(database, `rooms/${roomId}`)
+}
 
 export function listenChat(callback) {
   onValue(nodeRef, (snapshot) => {
-    callback(snapshot.val().text)
+    callback(snapshot.val()?.text ?? '')
   })
 }
 
 export function updateChat(text) {
-  update(nodeRef, { text: text })
+  update(nodeRef, { text })
 }
