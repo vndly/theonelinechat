@@ -146,6 +146,7 @@ if (roomId) {
 // --- Homepage mode ---
 
 function initHomepage() {
+  inputElement.focus()
   inputElement.addEventListener('keypress', function (event) {
     if (event.key === 'Enter') {
       event.preventDefault()
