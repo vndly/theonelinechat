@@ -189,6 +189,8 @@ function initRoom(roomId) {
   setRoom(roomId)
   hintElement.classList.add('hidden')
 
+  let firstUpdate = true
+
   inputElement.addEventListener('keypress', function (event) {
     if (event.key === 'Enter') {
       event.preventDefault()
@@ -210,13 +212,18 @@ function initRoom(roomId) {
     }
     updateHeight(target)
   })
-}
 
-function updateInput({ text, color: textColor, font: textFont }) {
-  inputElement.value = text
-  inputElement.style.color = textColor || color
-  inputElement.style.fontFamily = textFont || font
-  updateHeight(inputElement)
+  function updateInput({ text, color: textColor, font: textFont }) {
+    inputElement.value = text
+    inputElement.style.color = textColor || color
+    inputElement.style.fontFamily = textFont || font
+    updateHeight(inputElement)
+
+    if (firstUpdate) {
+      firstUpdate = false
+      if (!text) inputElement.focus()
+    }
+  }
 }
 
 function updateHeight(el) {
