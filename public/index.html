@@ -2,6 +2,7 @@
 <html>
 
 <head>
+  <base href="/" />
   <title>The One Line Chat</title>
   <script type="module" src="logic.js"></script>
   <link href="style.css" rel="stylesheet" />
@@ -13,7 +14,7 @@
     <p id="hint">press enter to create a room &nbsp;·&nbsp; type a name to join one</p>
     <textarea rows="1" id="input"></textarea>
   </div>
-  <div id="notification"></div>
+  <div id="notification" role="status" aria-live="polite"></div>
   <div id="overlay">
     <div id="overlay-spinner"></div>
     <p id="overlay-label">creating room</p>

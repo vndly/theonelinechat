@@ -132,7 +132,11 @@ function generateRoomId() {
 
 // --- Routing ---
 
-const roomId = window.location.pathname.slice(1)
+function sanitiseRoomId(raw) {
+  return raw.toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/^-+|-+$/g, '')
+}
+
+const roomId = sanitiseRoomId(window.location.pathname.slice(1))
 const inputElement = document.getElementById('input')
 const hintElement = document.getElementById('hint')
 const notificationElement = document.getElementById('notification')
@@ -164,7 +168,8 @@ function initHomepage() {
       event.preventDefault()
       const value = inputElement.value.trim()
       if (value) {
-        window.location.href = '/' + value
+        const sanitised = sanitiseRoomId(value)
+        if (sanitised) window.location.href = '/' + sanitised
       } else {
         createRoom()
       }
