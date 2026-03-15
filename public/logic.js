@@ -4,7 +4,7 @@ import { listenChat, updateChat, setRoom, getTakenFonts, registerUser } from './
 
 let uid = localStorage.getItem('uid')
 if (!uid) {
-  uid = Math.random().toString(36).substr(2, 9)
+  uid = Math.random().toString(36).slice(2, 11)
   localStorage.setItem('uid', uid)
 }
 
@@ -210,13 +210,17 @@ async function initRoom(roomId) {
   setRoom(roomId)
   hintElement.classList.add('hidden')
 
-  const takenFonts = await getTakenFonts(roomId, uid)
-  if (takenFonts.includes(font)) {
-    const available = FONTS.filter(f => !takenFonts.includes(f))
-    font = available.length > 0
-      ? pickRandom(available)
-      : font // all fonts taken (>5 users), keep current as fallback
-    localStorage.setItem('font', font)
+  try {
+    const takenFonts = await getTakenFonts(roomId, uid)
+    if (takenFonts.includes(font)) {
+      const available = FONTS.filter(f => !takenFonts.includes(f))
+      font = available.length > 0
+        ? pickRandom(available)
+        : font // all fonts taken (>5 users), keep current as fallback
+      localStorage.setItem('font', font)
+    }
+  } catch (e) {
+    // keep current font on network/permission error
   }
   registerUser(roomId, uid, font, color)
 
@@ -235,15 +239,6 @@ async function initRoom(roomId) {
     updateChat({ text: '', color, font, activeUser: uid })
   })
 
-  // Live text updates while typing; also claims floor on first keystroke if unclaimed
-  inputElement.addEventListener('keyup', function (event) {
-    if (event.key === 'Enter') return
-    if (!floorHolder) floorHolder = uid
-    if (floorHolder === uid) {
-      updateChat({ text: inputElement.value, color, font, activeUser: uid })
-    }
-  })
-
   listenChat(updateInput)
 
   inputElement.addEventListener('input', event => {
@@ -252,6 +247,11 @@ async function initRoom(roomId) {
       target.value = target.value.slice(0, MAX_INPUT_LENGTH)
     }
     updateHeight(target)
+    // Claims floor on first edit if unclaimed; broadcasts live text updates
+    if (!floorHolder) floorHolder = uid
+    if (floorHolder === uid) {
+      updateChat({ text: target.value, color, font, activeUser: uid })
+    }
   })
 
   function enableInput() {
