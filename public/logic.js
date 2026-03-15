@@ -42,12 +42,17 @@ function getBackgroundColor() {
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
 }
 
-const MAX_INPUT_LENGTH = 100
+// --- Fading constants ---
+
+const FADE_TIMEOUT_MS = 20_000   // time before a character fades (per character, from when it was typed)
+const FADE_DURATION_MS = 2_000   // duration of the fade-out animation
+const FADE_CHAR_THRESHOLD = 120  // rolling window: oldest char fades when this limit is reached
 
 // --- Routing ---
 
 const roomId = sanitiseRoomId(window.location.pathname.slice(1))
 const inputElement = document.getElementById('input')
+const displayElement = document.getElementById('display')
 const hintElement = document.getElementById('hint')
 const notificationElement = document.getElementById('notification')
 const overlayElement = document.getElementById('overlay')
@@ -115,6 +120,17 @@ async function initRoom(roomId) {
   setRoom(roomId)
   hintElement.classList.add('hidden')
 
+  // Switch to display mode: hide textarea off-screen, show display div
+  inputElement.classList.add('room-hidden')
+  displayElement.classList.remove('hidden')
+  displayElement.style.color = color
+  displayElement.style.fontFamily = font
+
+  // Clicking the display focuses the hidden textarea so the floor holder can type
+  displayElement.addEventListener('click', () => {
+    if (floorHolder === uid) inputElement.focus()
+  })
+
   try {
     const takenFonts = await getTakenFonts(roomId, uid)
     if (takenFonts.includes(font)) {
@@ -132,7 +148,123 @@ async function initRoom(roomId) {
   let firstUpdate = true
   let floorHolder = null
 
-  // Global Enter listener — works without clicking the input
+  // --- Per-character state (floor holder only) ---
+  // Each entry: { char, addedAt, fading, el }
+  let chars = []
+  let charCheckInterval = null
+
+  function startCharChecker() {
+    if (charCheckInterval) return
+    charCheckInterval = setInterval(checkExpiredChars, 200)
+  }
+
+  function stopCharChecker() {
+    clearInterval(charCheckInterval)
+    charCheckInterval = null
+  }
+
+  function checkExpiredChars() {
+    const now = Date.now()
+    for (const c of chars) {
+      if (!c.fading && now - c.addedAt >= FADE_TIMEOUT_MS) startCharFade(c)
+    }
+  }
+
+  function startCharFade(c) {
+    if (c.fading) return
+    c.fading = true
+    if (c.el) c.el.classList.add('fading')
+    setTimeout(() => {
+      const idx = chars.indexOf(c)
+      if (idx !== -1) chars.splice(idx, 1)
+      c.el?.remove()
+      c.el = null
+      syncTextareaToChars()
+      broadcastText()
+      if (chars.length === 0) stopCharChecker()
+    }, FADE_DURATION_MS)
+  }
+
+  function addChar(ch) {
+    // When the rolling window is full, start fading the oldest active character
+    const active = chars.filter(c => !c.fading)
+    if (active.length >= FADE_CHAR_THRESHOLD) startCharFade(active[0])
+
+    const c = { char: ch, addedAt: Date.now(), fading: false, el: null }
+    chars.push(c)
+
+    const span = document.createElement('span')
+    span.className = 'char'
+    span.textContent = ch === ' ' ? '\u00A0' : ch
+    c.el = span
+    const cursor = displayElement.querySelector('.cursor')
+    cursor ? displayElement.insertBefore(span, cursor) : displayElement.appendChild(span)
+
+    startCharChecker()
+  }
+
+  function removeLastNChars(n) {
+    const removed = chars.splice(chars.length - n, n)
+    for (const c of removed) {
+      c.el?.remove()
+      c.el = null
+    }
+  }
+
+  function clearAllChars() {
+    for (const c of chars) {
+      c.el?.remove()
+      c.el = null
+    }
+    chars = []
+    stopCharChecker()
+  }
+
+  function syncTextareaToChars() {
+    inputElement.value = chars.map(c => c.char).join('')
+  }
+
+  function broadcastText() {
+    updateChat({ text: chars.map(c => c.char).join(''), color, font, activeUser: uid })
+  }
+
+  // --- Display helpers ---
+
+  // Renders the text as static (non-timed) spans — used for non-floor-holders
+  function renderStaticDisplay(text) {
+    displayElement.innerHTML = ''
+    for (const ch of text) {
+      const span = document.createElement('span')
+      span.className = 'char'
+      span.textContent = ch === ' ' ? '\u00A0' : ch
+      displayElement.appendChild(span)
+    }
+  }
+
+  function showCursor() {
+    if (!displayElement.querySelector('.cursor')) {
+      const cursor = document.createElement('span')
+      cursor.className = 'cursor'
+      displayElement.appendChild(cursor)
+    }
+  }
+
+  function hideCursor() {
+    displayElement.querySelector('.cursor')?.remove()
+  }
+
+  // --- Floor management ---
+
+  function enableInput() {
+    inputElement.removeAttribute('tabindex')
+  }
+
+  function disableInput() {
+    inputElement.setAttribute('tabindex', '-1')
+    inputElement.blur()
+  }
+
+  // Global Enter listener — works without clicking the display
   document.addEventListener('keydown', function (event) {
     if (event.key !== 'Enter') return
     event.preventDefault()
@@ -140,60 +272,77 @@ async function initRoom(roomId) {
       floorHolder = uid
       enableInput()
       inputElement.focus()
+      showCursor()
+      displayElement.style.color = color
+      displayElement.style.fontFamily = font
     }
+    clearAllChars()
+    syncTextareaToChars()
     updateChat({ text: '', color, font, activeUser: uid })
   })
 
   listenChat(updateInput)
 
   inputElement.addEventListener('input', event => {
-    const target = event.target
-    if (target.value.length > MAX_INPUT_LENGTH) {
-      target.value = target.value.slice(0, MAX_INPUT_LENGTH)
+    // Auto-claim floor on first keystroke if unclaimed
+    if (!floorHolder) {
+      floorHolder = uid
+      showCursor()
+      displayElement.style.color = color
+      displayElement.style.fontFamily = font
     }
-    updateHeight(target)
-    // Claims floor on first edit if unclaimed; broadcasts live text updates
-    if (!floorHolder) floorHolder = uid
-    if (floorHolder === uid) {
-      updateChat({ text: target.value, color, font, activeUser: uid })
+    if (floorHolder !== uid) return
+
+    const newValue = event.target.value
+    const currentValue = chars.map(c => c.char).join('')
+    if (newValue === currentValue) return
+
+    if (newValue.length > currentValue.length) {
+      // Characters added — assume at end (no mid-text cursor repositioning)
+      for (const ch of newValue.slice(currentValue.length)) addChar(ch)
+    } else {
+      // Characters removed — assume from end (backspace/delete)
+      removeLastNChars(currentValue.length - newValue.length)
     }
+
+    syncTextareaToChars()
+    broadcastText()
   })
 
-  function enableInput() {
-    inputElement.style.pointerEvents = ''
-    inputElement.removeAttribute('tabindex')
-  }
-
-  function disableInput() {
-    inputElement.style.pointerEvents = 'none'
-    inputElement.setAttribute('tabindex', '-1')
-    inputElement.blur()
-  }
-
   function updateInput({ text, color: textColor, font: textFont, activeUser }) {
-    inputElement.value = text
-    inputElement.style.color = textColor || color
-    inputElement.style.fontFamily = textFont || font
-    updateHeight(inputElement)
-
+    const wasHolder = floorHolder === uid
     floorHolder = activeUser
     const iAmHolder = floorHolder === uid
     const floorTaken = floorHolder !== null
 
-    if (floorTaken && !iAmHolder) {
-      disableInput()
-    } else {
+    displayElement.style.color = textColor || color
+    displayElement.style.fontFamily = textFont || font
+
+    if (wasHolder && !iAmHolder) {
+      // Lost the floor — clean up local char state
+      clearAllChars()
+    }
+
+    if (iAmHolder) {
+      // Own update echoing back — chars array is source of truth, don't re-render
       enableInput()
+      showCursor()
+    } else {
+      renderStaticDisplay(text)
+      hideCursor()
+      if (floorTaken) {
+        disableInput()
+      } else {
+        enableInput()
+      }
     }
 
     if (firstUpdate) {
       firstUpdate = false
-      if (!text && !floorTaken) inputElement.focus()
+      if (!text && !floorTaken) {
+        enableInput()
+        inputElement.focus()
+      }
     }
   }
-}
-
-function updateHeight(el) {
-  el.style.height = 'auto'
-  el.style.height = `${el.scrollHeight}px`
 }

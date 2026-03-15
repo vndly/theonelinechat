@@ -40,6 +40,52 @@ body {
   overflow: hidden;
 }
 
+/* In room mode the textarea moves off-screen; #display takes over visually */
+#input.room-hidden {
+  position: fixed;
+  top: -9999px;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+#display {
+  width: 100%;
+  font-size: 10em;
+  text-align: center;
+  word-break: break-word;
+  line-height: 1.2;
+  cursor: text;
+}
+
+#display.hidden {
+  display: none;
+}
+
+#display .char {
+  transition: opacity 2s ease;
+}
+
+#display .char.fading {
+  opacity: 0;
+}
+
+#display .cursor {
+  display: inline-block;
+  width: 0.05em;
+  height: 0.85em;
+  background: currentColor;
+  vertical-align: text-bottom;
+  margin-left: 0.02em;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 #overlay {
   display: none;
   position: fixed;
