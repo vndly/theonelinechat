@@ -2,6 +2,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/fireba
 import {
   getDatabase,
   ref,
+  get,
   update,
   onValue,
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js'
@@ -19,14 +20,32 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig)
 const database = getDatabase(app)
-const nodeRef = ref(database, 'test')
+let nodeRef = null
+
+export function setRoom(roomId) {
+  nodeRef = ref(database, `rooms/${roomId}`)
+}
+
+export async function getTakenFonts(roomId, uid) {
+  const snapshot = await get(ref(database, `rooms/${roomId}/users`))
+  const users = snapshot.val() || {}
+  return Object.entries(users)
+    .filter(([id]) => id !== uid)
+    .map(([, u]) => u.font)
+    .filter(Boolean)
+}
+
+export function registerUser(roomId, uid, font, color) {
+  update(ref(database, `rooms/${roomId}/users/${uid}`), { font, color })
+}
 
 export function listenChat(callback) {
   onValue(nodeRef, (snapshot) => {
-    callback(snapshot.val().text)
+    const data = snapshot.val() || {}
+    callback({ text: data.text ?? '', color: data.color, font: data.font, activeUser: data.activeUser ?? null })
   })
 }
 
-export function updateChat(text) {
-  update(nodeRef, { text: text })
+export function updateChat({ text, color, font, activeUser }) {
+  update(nodeRef, { text, color, font, activeUser })
 }
