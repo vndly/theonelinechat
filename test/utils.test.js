@@ -7,6 +7,7 @@ import {
   getRelativeLuminance,
   oklchToHex,
   generateReadableColor,
+  contrastRatio,
 } from '../public/utils.js'
 
 // --- pickRandom ---
@@ -150,50 +151,30 @@ describe('oklchToHex', () => {
 
 // --- generateReadableColor (the core contract) ---
 
-function contrastRatio(hex1, hex2) {
-  const l1 = getRelativeLuminance(hex1)
-  const l2 = getRelativeLuminance(hex2)
-  const lighter = Math.max(l1, l2)
-  const darker = Math.min(l1, l2)
-  return (lighter + 0.05) / (darker + 0.05)
-}
-
 describe('generateReadableColor', () => {
-  const BG = '#0882bb' // the app's background color
-
   it('returns a 7-character hex string', () => {
-    assert.match(generateReadableColor(BG), /^#[0-9a-f]{6}$/)
+    assert.match(generateReadableColor('#0882bb'), /^#[0-9a-f]{6}$/)
   })
 
-  it('meets the default minContrast of 3:1 against the background', () => {
-    for (let i = 0; i < 50; i++) {
-      const color = generateReadableColor(BG)
-      const ratio = contrastRatio(color, BG)
-      assert.ok(ratio >= 3, `contrast ${ratio.toFixed(2)} < 3 for ${color} on ${BG}`)
-    }
-  })
+  // Parameterized: verify the contrast guarantee holds across a range of backgrounds
+  // and minContrast values, including cases that stress the useLightZone decision
+  // (medium gray forces a switch to the dark zone for higher contrast requirements).
+  const cases = [
+    { bg: '#0882bb', minContrast: 3,   label: 'app bg, default contrast' },
+    { bg: '#0882bb', minContrast: 4.5, label: 'app bg, 4.5:1 (forces dark zone)' },
+    { bg: '#ffffff', minContrast: 3,   label: 'white bg' },
+    { bg: '#000000', minContrast: 3,   label: 'black bg' },
+    { bg: '#808080', minContrast: 3,   label: 'medium gray bg' },
+    { bg: '#808080', minContrast: 4.5, label: 'medium gray bg, 4.5:1' },
+  ]
 
-  it('meets a custom minContrast of 4.5:1 when requested', () => {
-    for (let i = 0; i < 50; i++) {
-      const color = generateReadableColor(BG, 4.5)
-      const ratio = contrastRatio(color, BG)
-      assert.ok(ratio >= 4.5, `contrast ${ratio.toFixed(2)} < 4.5 for ${color} on ${BG}`)
-    }
-  })
-
-  it('works on a light background (white)', () => {
-    for (let i = 0; i < 50; i++) {
-      const color = generateReadableColor('#ffffff')
-      const ratio = contrastRatio(color, '#ffffff')
-      assert.ok(ratio >= 3, `contrast ${ratio.toFixed(2)} < 3 for ${color} on #ffffff`)
-    }
-  })
-
-  it('works on a dark background (black)', () => {
-    for (let i = 0; i < 50; i++) {
-      const color = generateReadableColor('#000000')
-      const ratio = contrastRatio(color, '#000000')
-      assert.ok(ratio >= 3, `contrast ${ratio.toFixed(2)} < 3 for ${color} on #000000`)
-    }
-  })
+  for (const { bg, minContrast, label } of cases) {
+    it(`meets ${minContrast}:1 contrast — ${label}`, () => {
+      for (let i = 0; i < 50; i++) {
+        const color = generateReadableColor(bg, minContrast)
+        const ratio = contrastRatio(color, bg)
+        assert.ok(ratio >= minContrast, `contrast ${ratio.toFixed(2)} < ${minContrast} for ${color} on ${bg}`)
+      }
+    })
+  }
 })

@@ -116,7 +116,17 @@ export function generateReadableColor(bgHex, minContrast = 3) {
     if ((lighter + 0.05) / (darker + 0.05) >= minContrast) return hex
   }
 
-  // Fallback after exhausting retries: achromatic color at the zone boundary
+  // Fallback after exhausting retries: achromatic color at the zone boundary.
+  // Light zone targets lightZoneMin (exact contrast boundary). Dark zone targets
+  // darkZoneMax * 0.5 (midpoint) to avoid near-black results at the very edge.
   const safeLuminance = useLightZone ? Math.min(0.99, lightZoneMin) : Math.max(0, darkZoneMax * 0.5)
   return oklchToHex(findOKLCHLightness(0, 0, safeLuminance), 0, 0)
+}
+
+export function contrastRatio(hex1, hex2) {
+  const l1 = getRelativeLuminance(hex1)
+  const l2 = getRelativeLuminance(hex2)
+  const lighter = Math.max(l1, l2)
+  const darker = Math.min(l1, l2)
+  return (lighter + 0.05) / (darker + 0.05)
 }
