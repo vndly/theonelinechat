@@ -180,7 +180,7 @@ async function initRoom(roomId) {
       c.el?.remove()
       c.el = null
       syncTextareaToChars()
-      broadcastText()
+      if (floorHolder === uid) broadcastText()
       if (chars.length === 0) stopCharChecker()
     }, FADE_DURATION_MS)
   }
@@ -272,11 +272,12 @@ async function initRoom(roomId) {
       floorHolder = uid
       enableInput()
       inputElement.focus()
-      showCursor()
       displayElement.style.color = color
       displayElement.style.fontFamily = font
     }
     clearAllChars()
+    displayElement.innerHTML = ''
+    showCursor()
     syncTextareaToChars()
     updateChat({ text: '', color, font, activeUser: uid })
   })
