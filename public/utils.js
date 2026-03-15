@@ -1,6 +1,7 @@
 // --- Random ---
 
 export function pickRandom(arr) {
+  if (arr.length === 0) throw new Error('pickRandom called with empty array')
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
@@ -104,9 +105,11 @@ export function generateReadableColor(bgHex, minContrast = 3) {
     const hue = Math.random() * 360
     const chroma = 0.1 + Math.random() * 0.12  // 0.10–0.22: vivid but safely within sRGB for most hues
 
-    // Cap light zone at 0.95 to avoid near-white results
+    // Cap light zone at 0.95 to avoid near-white results.
+    // Use lightZoneMin as the floor even when it exceeds 0.95, so the range is never inverted.
+    const lightZoneCeil = Math.max(lightZoneMin, 0.95)
     const targetLuminance = useLightZone
-      ? lightZoneMin + Math.random() * (0.95 - lightZoneMin)
+      ? lightZoneMin + Math.random() * (lightZoneCeil - lightZoneMin)
       : Math.random() * darkZoneMax
 
     const hex = oklchToHex(findOKLCHLightness(chroma, hue, targetLuminance), chroma, hue)

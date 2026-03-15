@@ -23,6 +23,10 @@ describe('pickRandom', () => {
     assert.equal(pickRandom(['only']), 'only')
   })
 
+  it('throws on empty array', () => {
+    assert.throws(() => pickRandom([]), /empty array/)
+  })
+
   it('always stays within bounds over many calls', () => {
     const arr = [1, 2, 3, 4, 5]
     for (let i = 0; i < 500; i++) {
