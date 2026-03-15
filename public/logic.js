@@ -16,9 +16,13 @@ const FONTS = [
   '"Palatino Linotype", "Book Antiqua", Palatino, serif',
 ]
 
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)]
+}
+
 let font = localStorage.getItem('font')
 if (!font) {
-  font = FONTS[Math.floor(Math.random() * FONTS.length)]
+  font = pickRandom(FONTS)
   localStorage.setItem('font', font)
 }
 
@@ -107,6 +111,8 @@ function generateReadableColor(bgHex, minContrast = 3) {
   return oklchToHex(findOKLCHLightness(chroma, hue, targetLuminance), chroma, hue)
 }
 
+const MAX_INPUT_LENGTH = 100
+
 // --- Room ID generation ---
 
 const ADJECTIVES = [
@@ -124,10 +130,9 @@ const NOUNS = [
 ]
 
 function generateRoomId() {
-  const pick = arr => arr[Math.floor(Math.random() * arr.length)]
-  const adj1 = pick(ADJECTIVES)
-  const adj2 = pick(ADJECTIVES.filter(a => a !== adj1))
-  return `${adj1}-${adj2}-${pick(NOUNS)}`
+  const adj1 = pickRandom(ADJECTIVES)
+  const adj2 = pickRandom(ADJECTIVES.filter(a => a !== adj1))
+  return `${adj1}-${adj2}-${pickRandom(NOUNS)}`
 }
 
 // --- Routing ---
@@ -209,7 +214,7 @@ async function initRoom(roomId) {
   if (takenFonts.includes(font)) {
     const available = FONTS.filter(f => !takenFonts.includes(f))
     font = available.length > 0
-      ? available[Math.floor(Math.random() * available.length)]
+      ? pickRandom(available)
       : font // all fonts taken (>5 users), keep current as fallback
     localStorage.setItem('font', font)
   }
@@ -222,16 +227,12 @@ async function initRoom(roomId) {
   document.addEventListener('keydown', function (event) {
     if (event.key !== 'Enter') return
     event.preventDefault()
-    if (floorHolder === uid) {
-      // Clear text but keep the floor
-      updateChat({ text: '', color, font, activeUser: uid })
-    } else {
-      // Claim the floor
+    if (floorHolder !== uid) {
       floorHolder = uid
       enableInput()
       inputElement.focus()
-      updateChat({ text: '', color, font, activeUser: uid })
     }
+    updateChat({ text: '', color, font, activeUser: uid })
   })
 
   // Live text updates while typing; also claims floor on first keystroke if unclaimed
@@ -246,10 +247,9 @@ async function initRoom(roomId) {
   listenChat(updateInput)
 
   inputElement.addEventListener('input', event => {
-    const maxLength = 100
     const target = event.target
-    if (target.value.length > maxLength) {
-      target.value = target.value.slice(0, maxLength)
+    if (target.value.length > MAX_INPUT_LENGTH) {
+      target.value = target.value.slice(0, MAX_INPUT_LENGTH)
     }
     updateHeight(target)
   })
