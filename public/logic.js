@@ -143,20 +143,7 @@ async function initRoom(roomId) {
   // requestAnimationFrame, setTimeout, or after an async round-trip).
   displayElement.addEventListener('touchstart', event => {
     event.preventDefault()
-    if (floorHolder !== uid) {
-      floorHolder = uid
-      myClaimedAt = Math.max(Date.now(), floorClaimedAt + 1)
-      floorClaimedAt = myClaimedAt
-      enableInput()
-      displayElement.style.color = color
-      displayElement.style.fontFamily = font
-    }
-    inputElement.focus()
-    clearAllChars()
-    displayElement.innerHTML = ''
-    showCursor()
-    syncTextareaToChars()
-    updateChat({ text: '', color, font, activeUser: uid, claimedAt: myClaimedAt })
+    claimFloorAndStart()
   })
 
   try {
@@ -398,16 +385,9 @@ async function initRoom(roomId) {
     inputElement.blur()
   }
 
-  // Keep the hidden textarea focused whenever this user holds the floor.
-  // Handles any browser quirk that causes it to lose focus unexpectedly.
-  inputElement.addEventListener('blur', () => {
-    if (floorHolder === uid) inputElement.focus()
-  })
-
-  // Global Enter listener — works without clicking the display
-  document.addEventListener('keydown', function (event) {
-    if (event.key !== 'Enter') return
-    event.preventDefault()
+  // Claim the floor (if not already held) and reset the display to a blank
+  // slate ready for input. Called on Enter (desktop) and touchstart (mobile).
+  function claimFloorAndStart() {
     if (floorHolder !== uid) {
       floorHolder = uid
       myClaimedAt = Math.max(Date.now(), floorClaimedAt + 1)
@@ -422,6 +402,19 @@ async function initRoom(roomId) {
     showCursor()
     syncTextareaToChars()
     updateChat({ text: '', color, font, activeUser: uid, claimedAt: myClaimedAt })
+  }
+
+  // Keep the hidden textarea focused whenever this user holds the floor.
+  // Handles any browser quirk that causes it to lose focus unexpectedly.
+  inputElement.addEventListener('blur', () => {
+    if (floorHolder === uid) requestAnimationFrame(() => inputElement.focus())
+  })
+
+  // Global Enter listener — works without clicking the display
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Enter') return
+    event.preventDefault()
+    claimFloorAndStart()
   })
 
   listenChat(updateInput)
