@@ -37,7 +37,7 @@ There is no history. No accounts. No scrolling back. Just the current line — l
 - Press `Enter` to take the floor and start typing
 - Only one person types at a time — others see your text live
 - Each user gets a unique color and font (their "voice")
-- Text fades after a set time and character limit
+- Text fades after a set time and character limit *(planned — not yet implemented)*
 
 ---
 

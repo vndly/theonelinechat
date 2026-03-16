@@ -29,4 +29,4 @@ Use **Firebase Realtime Database** for all room state.
 - The project is coupled to Firebase. Migrating away would require replacing `firebase.js` and the data model
 - Firebase Realtime Database is a proprietary service — no self-hosting option
 - All clients connect directly to the database; there is no server-side validation layer beyond database rules
-- Room data is not explicitly deleted — relies on Firebase TTL or manual cleanup
+- Room data is not explicitly deleted — requires a manual cleanup mechanism (Firebase Realtime Database has no built-in TTL)
