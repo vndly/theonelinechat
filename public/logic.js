@@ -137,6 +137,28 @@ async function initRoom(roomId) {
     event.preventDefault()
   })
 
+  // Mobile: claim the floor and focus the textarea synchronously inside the
+  // touchstart gesture handler. Programmatic focus() is only honoured on mobile
+  // browsers when called directly within a user-gesture callback (not inside
+  // requestAnimationFrame, setTimeout, or after an async round-trip).
+  displayElement.addEventListener('touchstart', event => {
+    event.preventDefault()
+    if (floorHolder !== uid) {
+      floorHolder = uid
+      myClaimedAt = Math.max(Date.now(), floorClaimedAt + 1)
+      floorClaimedAt = myClaimedAt
+      enableInput()
+      displayElement.style.color = color
+      displayElement.style.fontFamily = font
+    }
+    inputElement.focus()
+    clearAllChars()
+    displayElement.innerHTML = ''
+    showCursor()
+    syncTextareaToChars()
+    updateChat({ text: '', color, font, activeUser: uid, claimedAt: myClaimedAt })
+  })
+
   try {
     const takenFonts = await getTakenFonts(roomId, uid)
     if (takenFonts.includes(font)) {
@@ -379,7 +401,7 @@ async function initRoom(roomId) {
   // Keep the hidden textarea focused whenever this user holds the floor.
   // Handles any browser quirk that causes it to lose focus unexpectedly.
   inputElement.addEventListener('blur', () => {
-    if (floorHolder === uid) requestAnimationFrame(() => inputElement.focus())
+    if (floorHolder === uid) inputElement.focus()
   })
 
   // Global Enter listener — works without clicking the display
