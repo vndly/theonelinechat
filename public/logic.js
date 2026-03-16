@@ -303,6 +303,7 @@ async function initRoom(roomId) {
     if (text === '') {
       displayElement.innerHTML = ''
       displayElement.classList.remove('has-content')
+      resetFontSize()
       spectatorSpans = []
       spectatorText = ''
       return
@@ -388,6 +389,7 @@ async function initRoom(roomId) {
     if (floorHolder !== uid) {
       floorHolder = uid
       myClaimedAt = Math.max(Date.now(), floorClaimedAt + 1)
+      floorClaimedAt = myClaimedAt
       enableInput()
       displayElement.style.color = color
       displayElement.style.fontFamily = font
@@ -407,6 +409,7 @@ async function initRoom(roomId) {
     if (!floorHolder) {
       floorHolder = uid
       myClaimedAt = Math.max(Date.now(), floorClaimedAt + 1)
+      floorClaimedAt = myClaimedAt
       showCursor()
       displayElement.style.color = color
       displayElement.style.fontFamily = font
@@ -423,6 +426,11 @@ async function initRoom(roomId) {
     } else {
       // Characters removed — assume from end (backspace/delete)
       removeLastNChars(currentValue.length - newValue.length)
+      if (chars.length === 0) {
+        displayElement.classList.remove('has-content')
+        resetFontSize()
+        stopCharChecker()
+      }
     }
 
     syncTextareaToChars()
