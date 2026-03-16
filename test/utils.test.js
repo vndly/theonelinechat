@@ -6,6 +6,7 @@ import {
   generateRoomId,
   getRelativeLuminance,
   oklchToHex,
+  findOKLCHLightness,
   generateReadableColor,
   contrastRatio,
 } from '../public/utils.js'
@@ -181,4 +182,77 @@ describe('generateReadableColor', () => {
       }
     })
   }
+})
+
+// --- contrastRatio ---
+
+describe('contrastRatio', () => {
+  it('returns ~21 for black on white', () => {
+    assert.ok(Math.abs(contrastRatio('#000000', '#ffffff') - 21) < 0.1)
+  })
+
+  it('is symmetric — order of arguments does not matter', () => {
+    const a = contrastRatio('#0882bb', '#ffffff')
+    const b = contrastRatio('#ffffff', '#0882bb')
+    assert.ok(Math.abs(a - b) < 0.0001)
+  })
+
+  it('returns exactly 1 for the same color against itself', () => {
+    assert.equal(contrastRatio('#0882bb', '#0882bb'), 1)
+  })
+
+  it('always returns a value >= 1', () => {
+    const pairs = [
+      ['#000000', '#ffffff'],
+      ['#ff0000', '#00ff00'],
+      ['#0882bb', '#123456'],
+      ['#abcdef', '#fedcba'],
+    ]
+    for (const [a, b] of pairs) {
+      assert.ok(contrastRatio(a, b) >= 1, `contrastRatio(${a}, ${b}) < 1`)
+    }
+  })
+})
+
+// --- findOKLCHLightness ---
+
+describe('findOKLCHLightness', () => {
+  it('returns a value in [0, 1]', () => {
+    const L = findOKLCHLightness(0, 0, 0.2)
+    assert.ok(L >= 0 && L <= 1)
+  })
+
+  it('achromatic: produced color has luminance close to target', () => {
+    // C=0 makes the OKLCH→sRGB mapping monotone, so binary search is exact
+    const targets = [0.05, 0.2, 0.5, 0.8]
+    for (const target of targets) {
+      const L = findOKLCHLightness(0, 0, target)
+      const actual = getRelativeLuminance(oklchToHex(L, 0, 0))
+      assert.ok(Math.abs(actual - target) < 0.005, `target ${target}, got ${actual}`)
+    }
+  })
+
+  it('higher target luminance produces higher lightness (achromatic)', () => {
+    const L1 = findOKLCHLightness(0, 0, 0.1)
+    const L2 = findOKLCHLightness(0, 0, 0.5)
+    const L3 = findOKLCHLightness(0, 0, 0.9)
+    assert.ok(L1 < L2 && L2 < L3)
+  })
+
+  it('targetLuminance=0 produces near-black', () => {
+    const L = findOKLCHLightness(0, 0, 0)
+    assert.ok(getRelativeLuminance(oklchToHex(L, 0, 0)) < 0.01)
+  })
+
+  it('targetLuminance=1 produces near-white (achromatic)', () => {
+    const L = findOKLCHLightness(0, 0, 1)
+    assert.ok(getRelativeLuminance(oklchToHex(L, 0, 0)) > 0.98)
+  })
+
+  it('works with non-zero chroma and returns a value in [0, 1]', () => {
+    for (const hue of [0, 90, 180, 270]) {
+      const L = findOKLCHLightness(0.15, hue, 0.4)
+      assert.ok(L >= 0 && L <= 1, `hue ${hue}: L=${L} out of range`)
+    }
+  })
 })

@@ -57,18 +57,29 @@ body {
   word-break: break-word;
   line-height: 1.2;
   cursor: text;
+  user-select: none;
+}
+
+#display.has-content {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  right: 0;
+  width: auto;
+  transform: translateY(-50%);
 }
 
 #display.hidden {
   display: none;
 }
 
-#display .char {
-  transition: opacity 2s ease;
+#display .char.fading {
+  animation: char-fade 0.6s ease-out forwards;
 }
 
-#display .char.fading {
-  opacity: 0;
+@keyframes char-fade {
+  from { opacity: 1; }
+  to   { opacity: 0; }
 }
 
 #display .cursor {
