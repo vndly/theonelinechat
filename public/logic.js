@@ -137,6 +137,11 @@ async function initRoom(roomId) {
     event.preventDefault()
   })
 
+  let firstUpdate = true
+  let floorHolder = null
+  let floorClaimedAt = 0   // timestamp of the most recent floor claim seen by this client
+  let myClaimedAt = 0      // timestamp of when this client claimed the floor
+
   // Mobile: claim the floor and focus the textarea synchronously inside the
   // touchstart gesture handler. Programmatic focus() is only honoured on mobile
   // browsers when called directly within a user-gesture callback (not inside
@@ -159,11 +164,6 @@ async function initRoom(roomId) {
     // keep current font on network/permission error
   }
   registerUser(roomId, uid, font, color)
-
-  let firstUpdate = true
-  let floorHolder = null
-  let floorClaimedAt = 0   // timestamp of the most recent floor claim seen by this client
-  let myClaimedAt = 0      // timestamp of when this client claimed the floor
 
   // --- Spectator display state ---
   // Tracks spans currently in the display for non-floor-holders, including
