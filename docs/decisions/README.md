@@ -7,6 +7,7 @@ Short documents capturing key architectural decisions — the context that led t
 | [001](001-firebase-realtime-database.md) | Firebase Realtime Database for room state | Accepted |
 | [002](002-no-framework-no-bundler.md) | No framework, no bundler | Accepted |
 | [003](003-oklch-color-generation.md) | OKLCH for user color generation | Accepted |
+| [004](004-textarea-display-split.md) | Separate textarea (input capture) from display div | Accepted |
 
 ---
 
