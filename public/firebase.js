@@ -42,10 +42,10 @@ export function registerUser(roomId, uid, font, color) {
 export function listenChat(callback) {
   onValue(nodeRef, (snapshot) => {
     const data = snapshot.val() || {}
-    callback({ text: data.text ?? '', color: data.color, font: data.font, activeUser: data.activeUser ?? null })
+    callback({ text: data.text ?? '', color: data.color, font: data.font, activeUser: data.activeUser ?? null, claimedAt: data.claimedAt ?? 0 })
   })
 }
 
-export function updateChat({ text, color, font, activeUser }) {
-  update(nodeRef, { text, color, font, activeUser })
+export function updateChat({ text, color, font, activeUser, claimedAt }) {
+  update(nodeRef, { text, color, font, activeUser, claimedAt })
 }
